@@ -4,7 +4,7 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-genai.configure(api_key=os.environ.get("AIzaSyB3SDUk9Q1MU6efsJk9Q2qnkNxoES0Qqvc"))
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
 generation_config = {
   "temperature": 1,
