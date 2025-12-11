@@ -13,31 +13,35 @@ generation_config = {
   "max_output_tokens": 1024,
 }
 
-model = genai.GenerativeModel(model_name="gemini-1.5-flash-latest", generation_config=generation_config)
+def try_generate(prompt):
+    model_list = ["gemini-1.5-flash", "gemini-1.5-flash-001", "gemini-pro"]
+    last_error = ""
+
+    for model_name in model_list:
+        try:
+            model = genai.GenerativeModel(model_name=model_name, generation_config=generation_config)
+            chat_session = model.start_chat(history=[])
+            response = chat_session.send_message(prompt)
+            return response.text
+        except Exception as e:
+            last_error = str(e)
+            continue
+    
+    return "Error en todos los modelos: " + last_error
 
 @app.route('/')
 def home():
-    return "Drixz AI Proxy Active"
+    return "Drixz AI Proxy Online - Auto Model Switcher Active"
 
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
         data = request.json
         user_msg = data.get('message', '')
-        
-        chat_session = model.start_chat(history=[])
-        response = chat_session.send_message(user_msg)
-        
-        return jsonify({"response": response.text})
+        response_text = try_generate(user_msg)
+        return jsonify({"response": response_text})
     except Exception as e:
-        # Si falla Flash, intentamos con Gemini Pro (backup)
-        try:
-            fallback_model = genai.GenerativeModel(model_name="gemini-pro")
-            chat_session = fallback_model.start_chat(history=[])
-            response = chat_session.send_message(user_msg)
-            return jsonify({"response": response.text})
-        except Exception as e2:
-            return jsonify({"response": "Error crítico: " + str(e) + " | Backup: " + str(e2)})
+        return jsonify({"response": "System Error: " + str(e)})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
